@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>图片识别 · 艺术鉴赏</title>
+    <style>
+        /* 密码遮罩层样式 */
+        .password-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(145deg, #1a2634, #0f172a);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            font-family: system-ui, sans-serif;
+        }
+        
+        .password-box {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 40px;
+            border-radius: 24px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            width: 90%;
+            max-width: 400px;
+            text-align: center;
+        }
+        
+        .password-box h2 {
+            color: #1e3c5c;
+            margin-bottom: 10px;
+            font-size: 1.8rem;
+        }
+        
+        .password-box p {
+            color: #64748b;
+            margin-bottom: 30px;
+            font-size: 0.95rem;
+        }
+        
+        .password-input {
+            width: 100%;
+            padding: 16px;
+            border: 2px solid #e2e8f0;
+            border-radius: 30px;
+            font-size: 1rem;
+            margin-bottom: 20px;
+            outline: none;
+            transition: border-color 0.3s;
+            text-align: center;
+            letter-spacing: 4px;
+            font-size: 1.5rem;
+        }
+        
+        .password-input:focus {
+            border-color: #1e3c5c;
+        }
+        
+        .password-btn {
+            background: #1e3c5c;
+            color: white;
+            border: none;
+            padding: 16px 32px;
+            border-radius: 30px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+            transition: background 0.3s;
+        }
+        
+        .password-btn:hover {
+            background: #2c5282;
+        }
+        
+        .error-message {
+            color: #ef4444;
+            margin-top: 15px;
+            font-size: 0.9rem;
+            display: none;
+        }
+        
+        /* 原来的样式保持不变，再加一个隐藏类 */
+        .hidden {
+            display: none !important;
+        }
+        
+        /* 这里复制您之前的所有样式 */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: linear-gradient(145deg, #2c3e50, #1a2634);
+            font-family: system-ui, sans-serif;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 16px;
+        }
+        .app {
+            width: 100%;
+            max-width: 800px;
+            background: rgba(255,255,255,0.95);
+            border-radius: 32px;
+            overflow: hidden;
+            box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5);
+        }
+        .header {
+            background: #1e3c5c;
+            color: white;
+            padding: 24px;
+        }
+        .header h1 {
+            font-size: 1.8rem;
+            margin-bottom: 8px;
+        }
+        .header .meta {
+            font-size: 0.85rem;
+            color: #a8c9e5;
+            display: flex;
+            gap: 20px;
+        }
+        .chat-area {
+            height: 450px;
+            overflow-y: auto;
+            padding: 24px;
+            background: #f8fafc;
+        }
+        .message {
+            margin-bottom: 24px;
+            display: flex;
+            flex-direction: column;
+        }
+        .message.user { align-items: flex-end; }
+        .message.bot { align-items: flex-start; }
+        .message-content {
+            max-width: 80%;
+            padding: 14px 18px;
+            border-radius: 18px;
+            font-size: 0.95rem;
+            line-height: 1.5;
+            white-space: pre-wrap;
+        }
+        .user .message-content {
+            background: #1e3c5c;
+            color: white;
+            border-bottom-right-radius: 4px;
+        }
+        .bot .message-content {
+            background: white;
+            color: #1e293b;
+            border-bottom-left-radius: 4px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            border: 1px solid #e2e8f0;
+        }
+        .preview-image {
+            max-width: 200px;
+            border-radius: 12px;
+            margin-top: 10px;
+            border: 3px solid #fff;
+        }
+        .timestamp {
+            font-size: 0.7rem;
+            color: #94a3b8;
+            margin: 4px 12px;
+        }
+        .input-area {
+            padding: 20px;
+            background: white;
+            border-top: 1px solid #e2e8f0;
+        }
+        .image-preview-row {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+        .preview-item {
+            position: relative;
+            width: 80px;
+            height: 80px;
+            border-radius: 12px;
+            overflow: hidden;
+            border: 2px solid #1e3c5c;
+        }
+        .preview-item img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .preview-item .remove {
+            position: absolute;
+            top: 2px;
+            right: 2px;
+            background: #ef4444;
+            color: white;
+            border: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            cursor: pointer;
+        }
+        .input-row {
+            display: flex;
+            gap: 12px;
+        }
+        #messageInput {
+            flex: 1;
+            padding: 16px;
+            border: 2px solid #e2e8f0;
+            border-radius: 30px;
+            font-size: 1rem;
+            outline: none;
+        }
+        #messageInput:focus {
+            border-color: #1e3c5c;
+        }
+        .btn {
+            width: 54px;
+            height: 54px;
+            border-radius: 27px;
+            border: none;
+            background: #1e3c5c;
+            color: white;
+            font-size: 1.3rem;
+            cursor: pointer;
+        }
+        .btn.upload { background: #7f8c8d; }
+        .btn:disabled { opacity: 0.5; }
+    </style>
+</head>
+<body>
+    <!-- 密码保护遮罩层 -->
+    <div class="password-overlay" id="passwordOverlay">
+        <div class="password-box">
+            <h2>🔐 需要密码</h2>
+            <p>请输入访问密码以继续</p>
+            <input type="password" class="password-input" id="passwordInput" placeholder="****" maxlength="6" inputmode="numeric" pattern="[0-9]*">
+            <button class="password-btn" id="submitPassword">进入</button>
+            <div class="error-message" id="passwordError">密码错误，请重新输入</div>
+        </div>
+    </div>
+
+    <!-- 主应用（初始隐藏） -->
+    <div class="app hidden" id="mainApp">
+        <div class="header">
+            <h1>🎨 图片识别 · 艺术鉴赏</h1>
+            <div class="meta">
+                <span>RootUser_2120542834</span>
+                <span>发布于 2026-02-17</span>
+            </div>
+        </div>
+        
+        <div class="chat-area" id="chatMessages">
+            <div class="message bot">
+                <div class="message-content">
+                    您好！
+                </div>
+                <div class="timestamp">刚刚</div>
+            </div>
+        </div>
+        
+        <div class="input-area">
+            <div class="image-preview-row" id="imagePreview"></div>
+            <div class="input-row">
+                <input type="text" id="messageInput" placeholder="输入问题或上传图片...">
+                <button class="btn upload" id="uploadBtn">📎</button>
+                <button class="btn" id="sendBtn">📤</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ========== 密码验证 ==========
+        const CORRECT_PASSWORD = '258';  // 
+        
+        const passwordOverlay = document.getElementById('passwordOverlay');
+        const mainApp = document.getElementById('mainApp');
+        const passwordInput = document.getElementById('passwordInput');
+        const submitBtn = document.getElementById('submitPassword');
+        const errorMsg = document.getElementById('passwordError');
+        
+        // 验证密码
+        function checkPassword() {
+            const enteredPassword = passwordInput.value.trim();
+            
+            if (enteredPassword === CORRECT_PASSWORD) {
+                // 密码正确，隐藏遮罩，显示主应用
+                passwordOverlay.style.display = 'none';
+                mainApp.classList.remove('hidden');
+                errorMsg.style.display = 'none';
+                
+                // 初始化应用（原来的代码）
+                initializeApp();
+            } else {
+                // 密码错误，显示错误信息
+                errorMsg.style.display = 'block';
+                passwordInput.value = '';
+                passwordInput.focus();
+            }
+        }
+        
+        // 回车键提交
+        passwordInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                checkPassword();
+            }
+        });
+        
+        // 点击按钮提交
+        submitBtn.addEventListener('click', checkPassword);
+        
+        // 自动聚焦输入框
+        passwordInput.focus();
+        
+        // ========== 原来的应用代码 ==========
+        function initializeApp() {
+            const API_URL = 'https://您的railway地址.up.railway.app'; // 改成您的Railway地址
+            // 本地测试用：'http://localhost:3000'
+            
+            let sessionId = null;
+            let selectedImages = [];
+
+            // 初始化会话
+            fetch(API_URL + '/api/session', { method: 'POST' })
+                .then(res => res.json())
+                .then(data => sessionId = data.sessionId)
+                .catch(() => {
+                    // 如果后端连不上，用本地会话
+                    sessionId = 'local_' + Date.now();
+                });
+
+            // 发送消息
+            async function sendMessage() {
+                const input = document.getElementById('messageInput');
+                const message = input.value.trim();
+                if (!message && selectedImages.length === 0) return;
+
+                addMessage(message || '上传图片', 'user', selectedImages);
+                input.value = '';
+
+                try {
+                    const res = await fetch(API_URL + '/api/chat', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            message,
+                            sessionId,
+                            image: selectedImages[0]?.dataUrl
+                        })
+                    });
+                    const data = await res.json();
+                    addMessage(data.reply, 'bot');
+                } catch (err) {
+                    addMessage('图片已收到，正在分析...', 'bot');
+                }
+                
+                selectedImages = [];
+                updateImagePreview();
+            }
+
+            function addMessage(text, sender, images = null) {
+                const chat = document.getElementById('chatMessages');
+                const msgDiv = document.createElement('div');
+                msgDiv.className = `message ${sender}`;
+                
+                let content = `<div class="message-content">${text.replace(/\n/g, '<br>')}</div>`;
+                if (images?.length) {
+                    content += `<img src="${images[0].dataUrl}" class="preview-image">`;
+                }
+                content += `<div class="timestamp">${new Date().toLocaleTimeString()}</div>`;
+                
+                msgDiv.innerHTML = content;
+                chat.appendChild(msgDiv);
+                chat.scrollTop = chat.scrollHeight;
+            }
+
+            document.getElementById('uploadBtn').addEventListener('click', () => {
+                const input = document.createElement('input');
+                input.type = 'file';
+                input.accept = 'image/*';
+                input.onchange = (e) => {
+                    const file = e.target.files[0];
+                    if (file) {
+                        const reader = new FileReader();
+                        reader.onload = (e) => {
+                            selectedImages = [{ dataUrl: e.target.result }];
+                            updateImagePreview();
+                        };
+                        reader.readAsDataURL(file);
+                    }
+                };
+                input.click();
+            });
+
+            function updateImagePreview() {
+                const preview = document.getElementById('imagePreview');
+                if (selectedImages.length === 0) {
+                    preview.innerHTML = '';
+                    return;
+                }
+                preview.innerHTML = `
+                    <div class="preview-item">
+                        <img src="${selectedImages[0].dataUrl}">
+                        <button class="remove" onclick="removeImage()">×</button>
+                    </div>
+                `;
+            }
+
+            window.removeImage = () => {
+                selectedImages = [];
+                updateImagePreview();
+            };
+
+            document.getElementById('sendBtn').addEventListener('click', sendMessage);
+            document.getElementById('messageInput').addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') sendMessage();
+            });
+        }
+    </script>
+</body>
+</html>
